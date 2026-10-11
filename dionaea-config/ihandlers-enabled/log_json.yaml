@@ -1,0 +1,14 @@
+# Enables Dionaea's log_json ihandler (disabled by default) and points it at
+# the JSON sink inside DIONAEA_STATEDIR (/opt/dionaea/var/lib/dionaea).
+#
+# This directory is what the `dionaea_logs` volume is mounted onto in
+# docker-compose.yml (on both the `dionaea` service and `dionaea-shipper`),
+# so the file dionaea-shipper tails (/dionaea-logs/dionaea.json) is the same
+# physical file Dionaea is writing to.
+#
+# Mounted into the container at:
+#   /opt/dionaea/etc/dionaea/ihandlers-enabled/log_json.yaml
+- name: log_json
+  config:
+    handlers:
+        - file:///opt/dionaea/var/lib/dionaea/json-logs/dionaea.json
