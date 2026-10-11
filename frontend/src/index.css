@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/* Theme tokens                                                        */
+/*                                                                      */
+/* Dark is the default and lives on :root so the app renders correctly */
+/* before ThemeContext has a chance to run (no flash-of-wrong-theme).  */
+/* Adding class="light" to <html> (done by ThemeContext) swaps every   */
+/* token below to its light-mode value. Tailwind's `soc.*` colors      */
+/* (tailwind.config.js) read these vars directly via rgb(var(..)), so  */
+/* every existing soc-prefixed background/text/border class in the app */
+/* re-themes automatically.                                            */
+/* ------------------------------------------------------------------ */
+:root {
+  --soc-bg: 8 11 18;
+  --soc-bg-elevated: 13 17 25;
+  --soc-panel: 16 20 29;
+  --soc-panel-solid: 16 20 29;
+  --soc-panel-border: 35 42 56;
+  --soc-panel-border-hover: 50 59 77;
+  --soc-cyan: 34 211 238;
+  --soc-indigo: 99 102 241;
+  --soc-danger: 244 63 94;
+  --soc-warning: 245 158 11;
+  --soc-success: 52 211 153;
+  --soc-text-primary: 241 245 249;
+  --soc-text-muted: 139 150 168;
+  --soc-text-faint: 91 101 121;
+
+  --soc-glass-bg: rgba(16, 20, 29, 0.72);
+  --soc-body-bg: #080b12;
+  --soc-glow-1: rgba(34, 211, 238, 0.06);
+  --soc-glow-2: rgba(99, 102, 241, 0.06);
+  --soc-skeleton-bg: #161b26;
+  --soc-scrollbar-track: #232a38;
+  --soc-scrollbar-thumb-hover: #323b4d;
+}
+
+:root.light {
+  --soc-bg: 244 246 250;
+  --soc-bg-elevated: 255 255 255;
+  --soc-panel: 255 255 255;
+  --soc-panel-solid: 255 255 255;
+  --soc-panel-border: 219 224 233;
+  --soc-panel-border-hover: 197 205 219;
+  --soc-cyan: 8 145 178;
+  --soc-indigo: 79 70 229;
+  --soc-danger: 220 38 38;
+  --soc-warning: 180 83 9;
+  --soc-success: 5 150 105;
+  --soc-text-primary: 15 23 42;
+  --soc-text-muted: 71 85 105;
+  --soc-text-faint: 100 116 139;
+
+  --soc-glass-bg: rgba(255, 255, 255, 0.75);
+  --soc-body-bg: #f4f6fa;
+  --soc-glow-1: rgba(8, 145, 178, 0.05);
+  --soc-glow-2: rgba(79, 70, 229, 0.05);
+  --soc-skeleton-bg: #e7ebf1;
+  --soc-scrollbar-track: #e2e6ee;
+  --soc-scrollbar-thumb-hover: #c5cddb;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--soc-body-bg);
+  background-image:
+    radial-gradient(circle at 15% 0%, var(--soc-glow-1) 0%, transparent 45%),
+    radial-gradient(circle at 85% 20%, var(--soc-glow-2) 0%, transparent 45%);
+  background-attachment: fixed;
+  color: rgb(var(--soc-text-primary));
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ------------------------------------------------------------------ */
+/* Legacy hardcoded utility classes                                    */
+/*                                                                      */
+/* A handful of components use plain Tailwind slate/white/black        */
+/* utilities instead of the soc.* tokens. Rather than touching every   */
+/* file, the light theme re-points just those classes here so the      */
+/* whole app repaints consistently.                                    */
+/* ------------------------------------------------------------------ */
+:root.light .text-slate-100,
+:root.light .text-slate-200 {
+  color: #0f172a;
+}
+:root.light .text-slate-300,
+:root.light .text-slate-400 {
+  color: #475569;
+}
+:root.light .text-white {
+  color: #0f172a;
+}
+:root.light .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+:root.light .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.06);
+}
+:root.light .bg-black\/20,
+:root.light .bg-black\/30,
+:root.light .bg-black\/60 {
+  background-color: rgba(15, 23, 42, 0.06);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--soc-scrollbar-track);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--soc-scrollbar-thumb-hover);
+}
+
+.glass-panel {
+  background: var(--soc-glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgb(var(--soc-panel-border));
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--soc-skeleton-bg);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  animation: shimmer 1.6s infinite;
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

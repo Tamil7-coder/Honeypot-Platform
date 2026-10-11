@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Honeypot SOC | Attack Analytics Platform</title>
+    <script>
+      // Applies the saved theme before React mounts / before first paint,
+      // so a returning "light" user never sees a flash of the dark default.
+      (function () {
+        try {
+          var saved = window.localStorage.getItem("honeypot-soc-theme");
+          if (saved === "light") {
+            document.documentElement.classList.add("light");
+          }
+        } catch (e) {
+          /* localStorage unavailable (private mode etc.) -- fall back to dark default */
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-soc-bg text-slate-200 font-display">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
