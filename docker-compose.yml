@@ -1,0 +1,165 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: honeypot_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-honeypot_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-honeypot_platform}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-honeypot_admin} -d ${POSTGRES_DB:-honeypot_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - honeypot_net
+
+  backend:
+    build:
+      context: ./backend
+    container_name: honeypot_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    networks:
+      - honeypot_net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: honeypot_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: /api/v1
+    depends_on:
+      - backend
+    networks:
+      - honeypot_net
+
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: honeypot_cowrie
+    restart: unless-stopped
+    environment:
+      COWRIE_TELNET_ENABLED: "yes"
+    ports:
+      - "2222:2222"
+      - "2223:2223"
+    volumes:
+      - cowrie_logs:/cowrie/cowrie-git/var/log/cowrie
+    networks:
+      - honeypot_net
+
+  cowrie-shipper:
+    build:
+      context: ./cowrie-shipper
+    container_name: honeypot_cowrie_shipper
+    restart: unless-stopped
+    environment:
+      INGEST_API_URL: http://backend:8000/api/v1/attacks/ingest
+      COWRIE_LOG_PATH: /cowrie-logs/cowrie.json
+      HONEYPOT_NAME: cowrie-01
+    volumes:
+      - cowrie_logs:/cowrie-logs:ro
+    depends_on:
+      - backend
+      - cowrie
+    networks:
+      - honeypot_net
+
+  # --- Multi-honeypot rollout: HTTP + FTP + SMB via Dionaea ---
+  # Dionaea's log_json ihandler writes to @DIONAEA_STATEDIR@, which resolves
+  # to /opt/dionaea/var/lib/dionaea inside the container -- NOT
+  # var/log/dionaea (that path only holds Dionaea's plaintext debug log).
+  # The dionaea_logs volume below is mounted on var/lib/dionaea so the file
+  # dionaea-shipper tails is the exact file Dionaea writes.
+  #
+  # log_json is disabled by default, so ./dionaea-config is bind-mounted
+  # over /opt/dionaea/etc/dionaea to enable it (see
+  # dionaea-config/ihandlers-enabled/log_json.yaml).
+  dionaea:
+    image: dinotools/dionaea:latest
+    container_name: honeypot_dionaea
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "mkdir -p /opt/dionaea/var/lib/dionaea/json-logs &&
+             chown -R dionaea:dionaea /opt/dionaea/var/lib/dionaea/json-logs &&
+             exec /usr/local/sbin/entrypoint.sh"
+    ports:
+      - "8080:80"  # Dionaea's emulated HTTP service (httpd handler)
+      - "2121:21"  # Dionaea's emulated FTP service (ftpd handler)
+      - "4450:445" # Dionaea's emulated SMB service (smbd handler)
+
+    environment:
+      DIONAEA_FORCE_INIT_CONF: "1"
+      DIONAEA_FORCE_INIT_DATA: "1"
+    volumes:
+      - dionaea_logs:/opt/dionaea/var/lib/dionaea/json-logs
+      - ./dionaea-config/ihandlers-enabled:/opt/dionaea/etc/dionaea/ihandlers-enabled:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep dionaea || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - honeypot_net
+
+  dionaea-shipper:
+    build:
+      context: ./dionaea-shipper
+    container_name: honeypot_dionaea_shipper
+    restart: unless-stopped
+    environment:
+      INGEST_API_URL: http://backend:8000/api/v1/attacks/ingest
+      # dionaea_logs is now mounted on Dionaea's real state dir, so the file
+      # lands at exactly this path -- no more multi-candidate guessing.
+      DIONAEA_LOG_PATH_CANDIDATES: /dionaea-logs/dionaea.json
+      HONEYPOT_NAME: dionaea-01
+      # Lowered from 30s so HTTP/FTP/SMB sessions flush to the backend
+      # quickly for near-real-time dashboard updates and fast verification.
+      SESSION_IDLE_TIMEOUT_SECONDS: "5"
+    volumes:
+      - dionaea_logs:/dionaea-logs:ro
+    depends_on:
+      - backend
+      - dionaea
+    networks:
+      - honeypot_net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: honeypot_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - honeypot_net
+
+volumes:
+  postgres_data:
+  cowrie_logs:
+  dionaea_logs:
+
+networks:
+  honeypot_net:
+    driver: bridge
