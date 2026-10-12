@@ -1,3 +1,4 @@
+
 """
 Centralized application configuration.
 
@@ -5,7 +6,9 @@ All environment-dependent values are loaded here so that no other module
 reads os.environ directly. This keeps configuration a single source of truth
 (SOLID - Single Responsibility) and makes testing/overriding trivial.
 """
+
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,21 +35,17 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
 
     # --- CORS ---
-    
-CORS_ORIGINS: list[str] = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost",
-    "https://honeypot-dashboard-zin5.onrender.com",
-]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost",
+        "https://honeypot-dashboard-zin5.onrender.com",
+    ]
+
     # --- Rate limiting ---
     RATE_LIMIT_DEFAULT: str = "100/minute"
 
     # --- Email alerts (Phase 3) ---
-    # Works with any standard SMTP provider: Gmail (use an App Password, not
-    # your account password), Mailtrap (sandbox, for development), or any
-    # corporate SMTP relay. Leave EMAIL_ENABLED=false to run without SMTP
-    # configured — ingestion and everything else keeps working normally.
     EMAIL_ENABLED: bool = False
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -57,13 +56,10 @@ CORS_ORIGINS: list[str] = [
     SMTP_FROM_NAME: str = "Honeynet SOC"
 
     ADMIN_ALERT_EMAIL: str = ""
-    ALERT_MIN_SEVERITY: str = "high"  # sessions at or above this severity trigger an email
+    ALERT_MIN_SEVERITY: str = "high"
     FRONTEND_BASE_URL: str = "http://localhost"
 
     # --- Threat Intelligence (Phase 6) ---
-    # Each provider is independent and optional: leave any key blank to skip
-    # that provider gracefully (its section of the response is simply marked
-    # "not configured" rather than the whole lookup failing).
     ABUSEIPDB_API_KEY: str = ""
     VIRUSTOTAL_API_KEY: str = ""
     OTX_API_KEY: str = ""
@@ -77,7 +73,10 @@ CORS_ORIGINS: list[str] = [
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+    )
 
 
 @lru_cache
