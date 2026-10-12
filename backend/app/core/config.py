@@ -32,8 +32,13 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
 
     # --- CORS ---
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost"]
-
+    
+CORS_ORIGINS: list[str] = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost",
+    "https://honeypot-dashboard-zin5.onrender.com",
+]
     # --- Rate limiting ---
     RATE_LIMIT_DEFAULT: str = "100/minute"
 
